@@ -1,0 +1,165 @@
+#include <SoftwareSerial.h>
+#include "RoboClaw.h"
+
+// Create the serial communications object
+SoftwareSerial serial = SoftwareSerial(10,11);
+
+// Create the RoboClaw object
+RoboClaw roboclaw(&serial,10000);
+
+#define address 0x80
+bool state = false;
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(2,INPUT_PULLUP);
+  // Start communicating with the RoboClaw hardware
+  roboclaw.begin(38400);
+
+}
+
+void displayspeed(void)
+{
+  uint8_t status1,status2,status3,status4;
+  bool valid1,valid2,valid3,valid4;
+  
+  int32_t enc1 = roboclaw.ReadEncM1(address, &status1, &valid1);
+  int32_t enc2 = roboclaw.ReadEncM2(address, &status2, &valid2);
+  int32_t speed1 = roboclaw.ReadSpeedM1(address, &status3, &valid3);
+  int32_t speed2 = roboclaw.ReadSpeedM2(address, &status4, &valid4);
+
+  Serial.print("Encoder1:");
+  if(valid1){
+    Serial.print(enc1,DEC);
+    Serial.print(" ");
+    Serial.print(status1,HEX);
+    Serial.print(" ");
+  }
+  else{
+	Serial.print("failed ");
+  }
+  Serial.print("Encoder2:");
+  if(valid2){
+    Serial.print(enc2,DEC);
+    Serial.print(" ");
+    Serial.print(status2,HEX);
+    Serial.print(" ");
+  }
+  else{
+	Serial.print("failed ");
+  }
+  Serial.print("Speed1:");
+  if(valid3){
+    Serial.print(speed1,DEC);
+    Serial.print(" ");
+  }
+  else{
+	Serial.print("failed ");
+  }
+  Serial.print("Speed2:");
+  if(valid4){
+    Serial.print(speed2,DEC);
+    Serial.print(" ");
+  }
+  else{
+	Serial.print("failed ");
+  }
+  Serial.println();
+}
+
+//calculate moveforward, have it so its 50cm intervals
+//get another moveforward to only move into the middle
+
+void moveForward(int speed) {
+  roboclaw.SpeedDistanceM1M2(address, speed, 2700, speed, 2700, 1);
+  waitForCompletion();
+}
+void moveBeg(int speed) {
+  roboclaw.SpeedDistanceM1M2(address, speed, 1100, speed, 1100, 1);
+  waitForCompletion();
+}
+void moveLeft(int speed) {
+  roboclaw.SpeedDistanceM1M2(address, speed, 360, -speed, 360, 1);
+  waitForCompletion();
+}
+
+void moveRight(int speed) {
+  roboclaw.SpeedDistanceM1M2(address, -speed, 360, speed, 360, 1);
+  waitForCompletion();
+}
+
+void around(int speed){
+  roboclaw.SpeedDistanceM1M2(address, speed, 1225, -speed, 1225, 1);//turn around 180 right
+  waitForCompletion();
+}
+void adjust(int speed){//little over 10cm
+  roboclaw.SpeedDistanceM1M2(address, speed, 150, speed,150,1);
+  waitForCompletion();
+}
+void adjust10(int speed){//20 degree right turn at 300 speed
+  roboclaw.SpeedDistanceM1M2(address, -speed, 20, speed,20,1);
+  waitForCompletion(); //10 degree right turn at 100 speed
+}
+void gate(int speed){
+  roboclaw.SpeedDistanceM1M2(address, speed, 1250, speed, 1250, 1);
+  waitForCompletion();
+}
+
+void waitForCompletion() {
+  uint8_t depth1, depth2;
+  do {
+    displayspeed();
+    roboclaw.ReadBuffers(address, depth1, depth2);
+  } while (depth1 != 0x80 && depth2 != 0x80); // Loop until distance command has completed
+  delay(1000);
+}
+
+
+void loop() {
+  // your existing loop code remains unchanged
+  //moveBeg takes 1.9 seconds
+  //moveForward takes 3.7 seconds
+  //moveRight takes 1.44 seconds
+  //moveLeft takes 1.41 seconds
+  //around takes 2.04 seconds
+  if (digitalRead(2) == LOW) {
+    moveBeg(1000);
+    moveForward(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveForward(1000);
+    moveLeft(1000);
+    moveForward(1000);
+    moveLeft(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveRight(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveRight(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveLeft(1000);
+    moveForward(1000);
+    delay(1000);
+    moveLeft(1000);
+    delay(1000);
+    moveBeg(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveLeft(1000);
+    delay(1000);
+    moveForward(1000);
+    delay(1000);
+    moveLeft(1000);
+    delay(1000);
+    moveBeg(1000);
+
+
+  }
+}
