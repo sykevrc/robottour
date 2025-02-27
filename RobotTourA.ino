@@ -23,12 +23,12 @@ bool ldir = true;
 
 // Robot parameters
 const double wheelRadius = 6.3;
-const double rev = 672.0;
+const double rev = 192.0;
 
 // Motion variables
 double theta = 0;
 int prevSpeed = 0;
-const int slewRate = 26;
+const int slewRate = 15;
 
 // MPU6050
 MPU6050 mpu(Wire);
@@ -52,51 +52,21 @@ void setup() {
 }
 
 void loop() {
-  static int step = 0;
 
   mpu.update();
   theta = -mpu.getAngleZ();
-  Serial.println(step);
-  switch (step) {
-    case 0:
-      if (move(50, 0)) step++;
-      break;
-    case 1:
-      if (turnto(90)) step++;
-      break;
-    case 2:
-      if (move(50, 90)) step++;
-      break;
-    case 3:
-      if (turnto(180)) step++;
-      break;
-    case 4:
-      if (move(50, 180)) step++;
-      break;
-    case 5:
-      if (turnto(270)) step++;
-      break;
-    case 6:
-      if (move(50, 270)) step++;
-      break;
-    case 7:
-      if (turnto(0)) step++;
-      break;
-    case 8:
-      if (move(50, 360)) step = 9;  // Reset sequence
-      break;
-  }
+  move(8,0);
 }
 
 bool move(int dist, int agle) {
-  double convert = 1.5*(dist / (wheelRadius * 3.14159));
-  int error = convert * rev - lcount;
-
+  Serial.println(theta);
+  double convert = 0.73*(dist*100/ (wheelRadius * 3.14159));
+  double error = (convert * rev)-((lcount+rcount)/2);
   int targetSpeed;
   if (error > 4) {
-    targetSpeed = constrain(error, 120, 200);
+    targetSpeed = constrain(error, 50, 255);
   } else if (error < -4) {
-    targetSpeed = constrain(error, -200, -120);
+    targetSpeed = constrain(error, -255, -50);
   } else {
     targetSpeed = 0;
   }
@@ -110,11 +80,11 @@ bool move(int dist, int agle) {
   //Serial.println(String(prevSpeed)+ " "+ String(targetSpeed)+ " "+ String(error)+" "+ String(theta));
 
   if (theta > agle + 1) {
-    rspeed = 0.6 * (prevSpeed - theta);  //decimal is agressiveness of correction
-    lspeed = prevSpeed;
-  } else if (theta < agle - 1) {
-    lspeed = 0.6 * (prevSpeed - theta);  //decimal is agressiveness of correction
+    lspeed = (prevSpeed - 0.2*theta);  //decimal is agressiveness of correction
     rspeed = prevSpeed;
+  } else if (theta < agle - 1) {
+    rspeed = (prevSpeed - 0.2*theta);  //decimal is agressiveness of correction
+    lspeed = prevSpeed;
   } else {
     rspeed = prevSpeed;
     lspeed = prevSpeed;
@@ -123,12 +93,7 @@ bool move(int dist, int agle) {
 
   driveL(prevSpeed >= 0, lspeed);
   driveR(prevSpeed <= 0, rspeed);
-  if (abs(error < 4)) {
-    lcount = 0;
-    rcount = 0;
-    return true;
-  }
-  return false;
+  
 }
 bool turnto(int ang) {
   int error = 5.9 * (ang - theta);
