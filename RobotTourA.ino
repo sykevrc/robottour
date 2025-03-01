@@ -55,18 +55,23 @@ void loop() {
 
   mpu.update();
   theta = -mpu.getAngleZ();
-  move(8,0);
+  move(7,0);
 }
 
 bool move(int dist, int agle) {
-  Serial.println(theta);
-  double convert = 0.73*(dist*100/ (wheelRadius * 3.14159));
-  double error = (convert * rev)-((lcount+rcount)/2);
+  Serial.println(prevSpeed);
+  double convert = (dist*100/ (wheelRadius * 3.14159));
+  double error = 0.98*(convert * rev)-((lcount+rcount)/2);
   int targetSpeed;
+  if(abs(error)<10){
+    prevSpeed = 0;
+    delay(100000);
+
+  }
   if (error > 4) {
-    targetSpeed = constrain(error, 50, 255);
+    targetSpeed = constrain(error, 25, 200);
   } else if (error < -4) {
-    targetSpeed = constrain(error, -255, -50);
+    targetSpeed = constrain(error, -200, -25);
   } else {
     targetSpeed = 0;
   }
@@ -80,10 +85,10 @@ bool move(int dist, int agle) {
   //Serial.println(String(prevSpeed)+ " "+ String(targetSpeed)+ " "+ String(error)+" "+ String(theta));
 
   if (theta > agle + 1) {
-    lspeed = (prevSpeed - 0.2*theta);  //decimal is agressiveness of correction
+    lspeed = (prevSpeed - 2.3*abs(theta));  //decimal is agressiveness of correction
     rspeed = prevSpeed;
   } else if (theta < agle - 1) {
-    rspeed = (prevSpeed - 0.2*theta);  //decimal is agressiveness of correction
+    rspeed = (prevSpeed - 2*abs(theta));  //decimal is agressiveness of correction
     lspeed = prevSpeed;
   } else {
     rspeed = prevSpeed;
